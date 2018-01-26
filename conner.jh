@@ -1,0 +1,146 @@
+enum Language {
+	CZECH, ENGLISH
+}
+
+enum PublishingState {
+	NEW, TO_ACCEPT, ACCEPTED, PUBLISHED, DELETED, ARCHIVED
+}
+
+enum AttendingState {
+	NOT_ATTENDING, WAITING, STAND_IN, ATTENDING
+}
+
+enum PaymentItemType {
+	EVENT_TICKET, ACTIVITY_ATTENDING, ACCOMOIDATIONS
+}
+
+entity LocalizableText {
+	text String required
+    language Language required
+}
+
+entity User {
+	email String maxlength(100) required
+    first_name String required
+    last_name String required
+    nickname String maxlength(30)
+    year_of_birth Integer min(1900) max(2017)
+    phone_number String minlength(9) maxlength(9)
+}
+
+entity Event {
+	state PublishingState
+	string_id String required
+    date_from ZonedDateTime
+    date_to ZonedDateTime
+    location String
+    location_gps String
+    min_attendees Integer min(0)
+    max_attendees Integer min(0)
+}
+
+entity EventTicket {
+	code String required
+    cost Integer min(0) required
+    valid_from ZonedDateTime required
+    valid_to ZonedDateTime required
+    visible_from ZonedDateTime required
+    visible_to ZonedDateTime required
+}
+
+
+entity Activity {
+	state PublishingState
+    string_id String required
+    image_big ImageBlob required
+    image_thumb ImageBlob required
+    date_from ZonedDateTime required
+    date_to ZonedDateTime required
+    min_attendees Integer min(0)
+    max_attendees Integer min(0)
+    is_payable Boolean
+    is_payable_registration Boolean
+    cost Integer min(0)
+    is_attendable Boolean
+}
+
+entity ActivityGroup {
+	code String required
+}
+
+entity ActivityAttendee {
+	state AttendingState
+    changed_ts Instant
+}
+
+entity Payment {
+	created_ts Instant required
+    total_cost Integer required
+    payment_symbol String required
+    is_paid Boolean
+} 
+
+entity PaymentItem {
+	type PaymentItemType required
+    linked_item String
+    item_description String required
+    cost Integer required
+}
+
+/* END OF DOMAIN DEFINITION */
+
+/* START OF RELATIONS */
+relationship OneToMany{
+	Event{activities} to Activity{parent_event}
+}
+
+relationship ManyToOne{
+   Activity{group} to ActivityGroup
+}
+
+relationship OneToMany{
+	ActivityGroup{name} to LocalizableText
+}
+
+relationship OneToMany{
+	Activity{title} to LocalizableText
+}
+
+relationship OneToMany{
+	Activity{short_description} to LocalizableText
+}
+
+relationship OneToMany{
+	Activity{full_description} to LocalizableText
+}
+
+relationship OneToMany{
+	User{attending} to ActivityAttendee{user} 
+}
+
+relationship OneToMany{
+	ActivityAttendee{activity} to Activity{} 
+}
+
+relationship OneToMany{
+	User{managed_activities} to Activity{owner}
+}
+
+relationship OneToMany{
+	Event{event_tickets} to EventTicket{parent}
+}
+
+relationship OneToMany{
+	EventTicket{title} to LocalizableText{parent}
+}
+
+
+relationship OneToMany{
+ 	User{user_payments} to Payment{owner}
+}
+relationship OneToMany{
+	Payment{items} to PaymentItem{parent}
+}
+
+/* OTHER DEFINITIONS */
+
